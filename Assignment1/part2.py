@@ -38,8 +38,8 @@ def MSE(Y, A2):
 # Please note the dimensions and data types of both weights between input and hidden layer, and
 #  between hidden layer and output layer
 np.random.seed(42)
-convergence_threshold = 1e-7
-hidden_size = 4
+convergence_threshold = 1e-6
+hidden_size = 2
 input_size = 2
 output_size = 1
 
@@ -181,7 +181,9 @@ for epoch in tqdm(range(epochs)):
     loss = MSE(Y,A2)
     avg_loss_per_epoch.append(loss)
     
-    # print(f"Loss: {loss}")
+    print(f"True Y: {Y}")
+    print(f"Predicted Y: {A2}\n")
+    
     
     # Backward propagation
     dW1, db1, dW2, db2 = backward(Z1, A1, Z2, A2, Y)
@@ -230,8 +232,51 @@ plt.show()
 
 
 
-# hidden_arr = [x for x in range(5)]
-# epochs_arr = [10000, 5000, 2500, 1000]
+hidden_arr = [x for x in range(1, 6)]
+alpha_arr = [.1, .05, .01, .005, .001]
+
+convergence_dict = {}
+
+
+# Loop for tuning hyper-parameters
+for i in hidden_arr:
+    for j in alpha_arr:
+        # re-initialize random weights
+        hidden_size = i
+        W1 = np.random.randn(input_size, hidden_size) * 0.01
+        b1 = np.zeros((1, hidden_size))
+        W2 = np.random.randn(hidden_size, output_size) * 0.01
+        b2 = np.zeros((1, output_size))
+
+        # variables
+        epochs = 30000
+        avg_loss_per_epoch = []
+        convergence = epochs
+
+        # Training Loop
+        for epoch in tqdm(range(epochs)):
+            # Forward propagation
+            Z1, A1, Z2, A2 = forward_propagation(X, W1, b1, W2, b2)
+            loss = MSE(Y,A2)
+            avg_loss_per_epoch.append(loss)
+            
+            # Backward propagation
+            dW1, db1, dW2, db2 = backward(Z1, A1, Z2, A2, Y)
+
+            # Update parameters
+            W1, b1, W2, b2 = update_weights(W1, b1, W2, b2, dW1, db1, dW2, db2, j)
+
+            if epoch > 0: # convergence check
+                if abs(avg_loss_per_epoch[epoch - 1] - avg_loss_per_epoch[epoch]) < convergence_threshold:
+                    convergence = epoch
+                    break
+
+        convergence_dict[(i, j)] = (convergence, float(min(avg_loss_per_epoch)))
+
+print(f"Hidden Size/Learning Rate: Convergence Epoch, Min Error")
+for x in convergence_dict:
+    print(f"{x}: {convergence_dict[x]}")
+        
 
 
 
